@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PDFly — 100% Free Online PDF Converter</title>
+    <meta name="description" content="Convert images, documents, spreadsheets, text and webpage HTML directly to PDF in your browser. Fast, secure, private, and 100% free." />
+  </head>
+  <body>
+    <!-- Background Animated Orbs -->
+    <div class="bg-orbs"></div>
+
+    <div id="app">
+      <!-- Navbar -->
+      <nav class="navbar">
+        <div class="navbar-inner">
+          <a class="navbar-logo" id="nav-logo">
+            <div class="logo-icon">⚡</div>
+            <div class="logo-text">PDFly</div>
+          </a>
+          <ul class="navbar-links">
+            <li><a class="active" id="link-home">Home</a></li>
+            <li><a id="link-about">About</a></li>
+            <li>
+              <div class="theme-switch-container">
+                <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Dark Mode</span>
+                <button id="btn-theme-toggle" class="theme-toggle-switch" aria-label="Toggle Theme">
+                  <span class="theme-toggle-dot"></span>
+                </button>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Main Dynamic Content Target -->
+      <main id="main-content"></main>
+    </div>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
