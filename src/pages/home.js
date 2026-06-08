@@ -171,7 +171,7 @@ export function renderHomePage(container, navigateTo) {
       </section>
 
       <footer class="footer">
-        <p>PDFly — Free Online PDF Converter &nbsp;•&nbsp; Built with ❤️ for everyone &nbsp;•&nbsp; <a href="#">Privacy Policy</a></p>
+        <p>PDFly — Free Online PDF Converter &nbsp;•&nbsp; Built with ❤️ for everyone &nbsp;•&nbsp; <a href="#" id="link-privacy-policy" style="cursor:pointer;">Privacy Policy</a></p>
       </footer>
     </div>
   `;
@@ -192,4 +192,13 @@ export function renderHomePage(container, navigateTo) {
     card.addEventListener('click', handler);
     card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') handler(); });
   });
+
+  // Privacy Policy link
+  const privacyLink = document.getElementById('link-privacy-policy');
+  if (privacyLink) {
+    privacyLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      navigateTo('privacy');
+    });
+  }
 }

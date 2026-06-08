@@ -344,6 +344,20 @@ export function renderConverterPage(container, navigateTo, params) {
         <button class="file-item-remove" data-index="${idx}" aria-label="Remove File">✕</button>
       </div>
     `).join('');
+    
+    // Wire up delete buttons for cached files
+    document.querySelectorAll('.file-item-remove').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        clearCache();
+        fileList.innerHTML = '';
+        optionsPanel.style.display = 'none';
+        actionBar.style.display = 'none';
+        showToast('Cached files cleared', 'info');
+      });
+    });
+    
     optionsPanel.style.display = 'block';
     actionBar.style.display = 'flex';
   }

@@ -2,6 +2,7 @@ import './style.css';
 import { renderHomePage } from './pages/home';
 import { renderConverterPage } from './pages/converter';
 import { renderSignaturePage } from './pages/signature';
+import { renderPrivacyPage } from './pages/privacy';
 
 // App Router / Page Controller
 const mainContent = document.getElementById('main-content');
@@ -36,6 +37,10 @@ function renderState() {
     linkHome.classList.remove('active');
     linkAbout.classList.remove('active');
     renderSignaturePage(mainContent, navigateTo);
+  } else if (currentState.page === 'privacy') {
+    linkHome.classList.remove('active');
+    linkAbout.classList.remove('active');
+    renderPrivacyPage(mainContent, navigateTo);
   } else if (currentState.page === 'about') {
     linkHome.classList.remove('active');
     linkAbout.classList.add('active');
