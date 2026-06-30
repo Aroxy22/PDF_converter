@@ -7,7 +7,8 @@ import { mergePdfs } from '../converters/mergePdf';
 import { splitPdf } from '../converters/splitPdf';
 import { compressPdf, formatBytes } from '../converters/compressPdf';
 import { pdfToTxt } from '../converters/pdfToOthers';
-
+import { protectPdf } from '../converters/protectPdf';
+import { unlockPdf } from '../converters/unlockPdf';
 // File Cache Manager (stores in browser localStorage with inactivity timer)
 const INACTIVITY_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
@@ -185,13 +186,25 @@ const TOOL_CONFIGS = {
     accepts: '.pdf',
     multiple: false,
     options: `
-      <div class="option-group">
-        <label for="opt-compress-level">Compression Level</label>
-        <select id="opt-compress-level">
-          <option value="medium" selected>Medium (Good Quality & Size)</option>
-          <option value="high">High (Maximum Compression)</option>
-          <option value="low">Low (High Quality, Low compression)</option>
+      <div class="option-group" style="background: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid var(--border);">
+        <label for="opt-compress-level" style="font-weight: 600;">Compression Level</label>
+        <select id="opt-compress-level" style="margin-top: 8px;">
+          <option value="extreme">Extreme (Smallest size, affects layout)</option>
+          <option value="high">High (Good balance, standard quality)</option>
+          <option value="medium" selected>Medium (Recommended, high quality)</option>
+          <option value="low">Low (Maximum quality, larger size)</option>
         </select>
+      </div>
+      <div class="option-group" style="background: var(--bg-card); padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-top: 15px;">
+        <label style="font-weight: 600; margin-bottom: 10px; display: block;">Advanced Settings</label>
+        <label for="opt-remove-metadata" style="display:flex; align-items:center; gap:10px; cursor:pointer; margin-bottom: 10px;">
+          <input type="checkbox" id="opt-remove-metadata" checked style="width:auto; margin:0; accent-color: var(--primary);">
+          <span style="font-weight:normal; font-size:0.9rem;">Remove Metadata (Title, Author, etc.)</span>
+        </label>
+        <label for="opt-flatten" style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+          <input type="checkbox" id="opt-flatten" style="width:auto; margin:0; accent-color: var(--primary);">
+          <span style="font-weight:normal; font-size:0.9rem;">Flatten Form Fields & Annotations</span>
+        </label>
       </div>
     `,
   },
@@ -202,9 +215,91 @@ const TOOL_CONFIGS = {
     multiple: false,
     options: `<p style="font-size:0.8rem; color:var(--text-secondary)">Scan text blocks throughout this PDF and save them as a raw plain text file (.txt).</p>`,
   },
+  'protect-pdf': {
+    title: 'Protect PDF',
+    label: 'Protect',
+    accepts: '.pdf',
+    multiple: false,
+    options: `
+      <div class="option-group" style="grid-column: 1 / -1; width: 100%; max-width: 600px; margin: 0 auto; background: var(--bg-card); padding: clamp(20px, 5vw, 40px); border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: left; position: relative; overflow: hidden; box-sizing: border-box;">
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--primary), #a855f7);"></div>
+        
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+          <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(var(--primary-rgb), 0.1); display: flex; align-items: center; justify-content: center; color: var(--primary);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">Secure Your PDF</h3>
+            <p style="margin: 4px 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">Add strong 128-bit RC4 encryption</p>
+          </div>
+        </div>
+        
+        <div style="position: relative; width: 100%; box-sizing: border-box;">
+          <input type="password" id="opt-password" placeholder="Enter a strong password..." required 
+                 style="width: 100%; box-sizing: border-box; height: 60px; padding: 0 60px 0 20px; border-radius: 14px; border: 2px solid var(--border); background: var(--bg-main); font-size: 1.1rem; color: var(--text-primary); transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);"
+                 onfocus="this.style.borderColor='var(--primary)'; this.style.boxShadow='0 0 0 4px rgba(var(--primary-rgb), 0.1)';"
+                 onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='inset 0 2px 4px rgba(0,0,0,0.02)';"
+          >
+          <button type="button" 
+                  onclick="const p=document.getElementById('opt-password'); const isPwd = p.type==='password'; p.type=isPwd?'text':'password'; this.innerHTML=isPwd?'<svg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><path d=\\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22\\'></path></svg>':'<svg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><path d=\\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\\'></path><circle cx=\\'12\\' cy=\\'12\\' r=\\'3\\'></circle></svg>';" 
+                  style="position: absolute; right: 10px; top: 10px; width: 40px; height: 40px; background: var(--bg-card); color: var(--text-secondary); border: none; cursor: pointer; outline: none; border-radius: 10px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);"
+                  onmouseover="this.style.color='var(--text-primary)'; this.style.transform='scale(1.05)'" onmouseout="this.style.color='var(--text-secondary)'; this.style.transform='scale(1)'"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+        <div style="margin-top: 15px; display: flex; align-items: flex-start; gap: 10px; background: rgba(var(--primary-rgb), 0.05); padding: 12px 15px; border-radius: 8px;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.4; margin: 0; box-sizing: border-box;">Please save your password somewhere secure. If you lose it, the PDF cannot be recovered.</p>
+        </div>
+      </div>
+    `,
+  },
+  'unlock-pdf': {
+    title: 'Unlock PDF',
+    label: 'Unlock',
+    accepts: '.pdf',
+    multiple: false,
+    options: `
+      <div class="option-group" style="grid-column: 1 / -1; width: 100%; max-width: 600px; margin: 0 auto; background: var(--bg-card); padding: clamp(20px, 5vw, 40px); border-radius: 20px; border: 1px solid var(--border); box-shadow: 0 10px 30px rgba(0,0,0,0.08); text-align: left; position: relative; overflow: hidden; box-sizing: border-box;">
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: linear-gradient(90deg, var(--secondary, #3b82f6), #10b981);"></div>
+        
+        <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+          <div style="width: 50px; height: 50px; border-radius: 12px; background: rgba(59, 130, 246, 0.1); display: flex; align-items: center; justify-content: center; color: var(--secondary, #3b82f6);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+          </div>
+          <div>
+            <h3 style="margin: 0; font-size: 1.3rem; font-weight: 700; color: var(--text-primary);">Unlock Document</h3>
+            <p style="margin: 4px 0 0 0; font-size: 0.9rem; color: var(--text-secondary);">Remove password encryption from PDF</p>
+          </div>
+        </div>
+        
+        <div style="position: relative; width: 100%; box-sizing: border-box;">
+          <input type="password" id="opt-password" placeholder="Enter the current password..." required 
+                 style="width: 100%; box-sizing: border-box; height: 60px; padding: 0 60px 0 20px; border-radius: 14px; border: 2px solid var(--border); background: var(--bg-main); font-size: 1.1rem; color: var(--text-primary); transition: all 0.3s ease; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);"
+                 onfocus="this.style.borderColor='var(--secondary, #3b82f6)'; this.style.boxShadow='0 0 0 4px rgba(59, 130, 246, 0.1)';"
+                 onblur="this.style.borderColor='var(--border)'; this.style.boxShadow='inset 0 2px 4px rgba(0,0,0,0.02)';"
+          >
+          <button type="button" 
+                  onclick="const p=document.getElementById('opt-password'); const isPwd = p.type==='password'; p.type=isPwd?'text':'password'; this.innerHTML=isPwd?'<svg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><path d=\\'M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24M1 1l22 22\\'></path></svg>':'<svg width=\\'20\\' height=\\'20\\' viewBox=\\'0 0 24 24\\' fill=\\'none\\' stroke=\\'currentColor\\' stroke-width=\\'2\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\'><path d=\\'M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\\'></path><circle cx=\\'12\\' cy=\\'12\\' r=\\'3\\'></circle></svg>';" 
+                  style="position: absolute; right: 10px; top: 10px; width: 40px; height: 40px; background: var(--bg-card); color: var(--text-secondary); border: none; cursor: pointer; outline: none; border-radius: 10px; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);"
+                  onmouseover="this.style.color='var(--text-primary)'; this.style.transform='scale(1.05)'" onmouseout="this.style.color='var(--text-secondary)'; this.style.transform='scale(1)'"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+          </button>
+        </div>
+      </div>
+    `,
+  },
 };
 
 export function renderConverterPage(container, navigateTo, params) {
+  // Cleanup old 3D effect listener if it exists
+  if (window.pdflyMascotCleanup) {
+    window.pdflyMascotCleanup();
+    window.pdflyMascotCleanup = null;
+  }
+  
   const toolId = params?.toolId;
   const config = TOOL_CONFIGS[toolId];
 
@@ -482,6 +577,7 @@ export function renderConverterPage(container, navigateTo, params) {
     } else {
       if (splitPreviewPanel) splitPreviewPanel.style.display = 'none';
     }
+
   }
 
   function getFileIcon(name) {
@@ -615,7 +711,9 @@ export function renderConverterPage(container, navigateTo, params) {
       }
       else if (toolId === 'compress-pdf') {
         const level = document.getElementById('opt-compress-level').value;
-        const res = await compressPdf(selectedFiles[0], { level }, updateProgress);
+        const removeMetadata = document.getElementById('opt-remove-metadata').checked;
+        const flatten = document.getElementById('opt-flatten').checked;
+        const res = await compressPdf(selectedFiles[0], { level, removeMetadata, flatten }, updateProgress);
 
         convertedBlob = res.blob;
         document.getElementById('result-subtitle').textContent = `Size reduced from ${formatBytes(res.originalSize)} to ${formatBytes(res.newSize)} (${res.savings}% saved).`;
@@ -624,6 +722,18 @@ export function renderConverterPage(container, navigateTo, params) {
       else if (toolId === 'pdf-to-txt') {
         convertedBlob = await pdfToTxt(selectedFiles[0], updateProgress);
         setupSingleDownload(convertedBlob, selectedFiles[0].name.replace(/\.pdf$/i, '.txt'));
+      }
+      else if (toolId === 'protect-pdf') {
+        const password = document.getElementById('opt-password').value;
+        if (!password) throw new Error("Please enter a password.");
+        convertedBlob = await protectPdf(selectedFiles[0], password, updateProgress);
+        setupSingleDownload(convertedBlob, selectedFiles[0].name.replace(/\.pdf$/i, '_protected.pdf'));
+      }
+      else if (toolId === 'unlock-pdf') {
+        const password = document.getElementById('opt-password').value;
+        if (!password) throw new Error("Please enter the current password.");
+        convertedBlob = await unlockPdf(selectedFiles[0], password, updateProgress);
+        setupSingleDownload(convertedBlob, selectedFiles[0].name.replace(/\.pdf$/i, '_unlocked.pdf'));
       }
 
       showToast('Conversion completed successfully!', 'success');

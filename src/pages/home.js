@@ -57,6 +57,22 @@ export function renderHomePage(container, navigateTo) {
       theme: 'green',
       accepts: '.pdf',
     },
+    {
+      id: 'protect-pdf',
+      icon: '🔒',
+      title: 'Protect PDF',
+      desc: 'Add a password to secure your PDF file',
+      theme: 'red',
+      accepts: '.pdf',
+    },
+    {
+      id: 'unlock-pdf',
+      icon: '🔓',
+      title: 'Unlock PDF',
+      desc: 'Remove password protection from a PDF',
+      theme: 'cyan',
+      accepts: '.pdf',
+    },
   ];
 
   container.innerHTML = `

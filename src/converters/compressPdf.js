@@ -3,17 +3,31 @@ import { PDFDocument } from 'pdf-lib';
 
 /**
  * @param {File} file
- * @param {Object} opts - level ('low'|'medium'|'high')
+ * @param {Object} opts - level, removeMetadata, flatten
  * @param {Function} onProgress
  * @returns {Promise<Blob>}
  */
 export async function compressPdf(file, opts = {}, onProgress = () => {}) {
-  const { level = 'medium' } = opts;
+  const { level = 'medium', removeMetadata = true, flatten = false } = opts;
 
   onProgress(20);
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await PDFDocument.load(arrayBuffer, { ignoreEncryption: true });
+
+  if (removeMetadata) {
+    pdf.setTitle('');
+    pdf.setAuthor('');
+    pdf.setSubject('');
+    pdf.setKeywords([]);
+    pdf.setProducer('');
+    pdf.setCreator('');
+  }
+
+  if (flatten) {
+    const form = pdf.getForm();
+    if (form) form.flatten();
+  }
 
   onProgress(60);
 
